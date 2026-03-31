@@ -10,19 +10,21 @@ public class HotbarUI : MonoBehaviour
     void Update()
     {
         for (int i = 0; i < slotImages.Length; i++)
-        {
-            if (i < inventory.slots.Count)
-            {
-                slotImages[i].sprite = inventory.slots[i].item.icon;
-                slotImages[i].enabled = true;
-            }
-            else
-            {
-                slotImages[i].enabled = false;
-            }
+{
+    // Always keep slot visible
+    slotImages[i].enabled = true;
 
-            // Highlight selected slot
-            selectionHighlights[i].enabled = (i == inventory.selectedHotbarIndex);
-        }
+    if (i < inventory.slots.Count)
+    {
+        slotImages[i].sprite = inventory.slots[i].item.icon;
+    }
+    else
+    {
+        slotImages[i].sprite = null; // empty slot
+    }
+
+    // Highlight selected slot
+    selectionHighlights[i].enabled = (i == inventory.selectedHotbarIndex);
+}
     }
 }
