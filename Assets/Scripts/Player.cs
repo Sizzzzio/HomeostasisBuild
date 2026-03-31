@@ -16,10 +16,14 @@ public class Player : MonoBehaviour
 
     private SpriteRenderer sp;
 
+    private Inventory inventory;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         sp = GetComponent<SpriteRenderer>();
+
+        inventory = GetComponent<Inventory>();
     }
 
     void Update()
@@ -31,6 +35,11 @@ public class Player : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+        }
+
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            UseSelectedItem();
         }
     }
 
@@ -66,4 +75,23 @@ public class Player : MonoBehaviour
         UnityEngine.SceneManagement.SceneManager.LoadScene("GameScene");
     }
 
+    void UseSelectedItem()
+    {
+        if (inventory == null) return;
+
+        if (inventory.selectedHotbarIndex < inventory.slots.Count)
+        {
+            var slot = inventory.slots[inventory.selectedHotbarIndex];
+
+            Debug.Log("Using: " + slot.item.itemName);
+
+            // Example: consume item
+            slot.quantity--;
+
+            if (slot.quantity <= 0)
+            {
+                inventory.slots.RemoveAt(inventory.selectedHotbarIndex);
+            }
+        }
+    }
 }
