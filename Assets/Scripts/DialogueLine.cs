@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 
+[Serializable]
 public class DialogueLine
 {
     public string speakerName;   
@@ -12,6 +13,7 @@ public class DialogueLine
     public DialogueChoice[] choices; 
 }
 
+[Serializable]
 public class DialogueChoice
 {
     public string choiceText;           
