@@ -22,7 +22,6 @@ public class cog_behavior : MonoBehaviour
         if (distance <= followRange)
         {
             FollowPlayer();
-            FlipSprite();
         }
     }
 
