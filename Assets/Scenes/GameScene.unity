@@ -522,6 +522,8 @@ MonoBehaviour:
   player: {fileID: 1855065753}
   speed: 3
   followRange: 5
+  damage: 25
+  damageCooldown: 1
 --- !u!1 &1218587336
 GameObject:
   m_ObjectHideFlags: 0
@@ -782,12 +784,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Player
   moveSpeed: 5
   health: 100
+  maxHealth: 100
   jumpForce: 10
   groundCheck: {fileID: 2033334025}
   groundCheckRadius: 0.2
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
+  invincibilityDuration: 0.5
 --- !u!1 &1867366607
 GameObject:
   m_ObjectHideFlags: 0

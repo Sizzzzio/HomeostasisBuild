@@ -17,14 +17,12 @@ public class Player : MonoBehaviour
     public float invincibilityDuration = 0.5f;
 
     private SpriteRenderer sp;
-    private Inventory inventory;
     private MeleeAttack meleeAttack;
 
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
         sp = GetComponent<SpriteRenderer>();
-        inventory = GetComponent<Inventory>();
         meleeAttack = GetComponent<MeleeAttack>();
     }
 
@@ -40,7 +38,7 @@ public class Player : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.E))
         {
-            UseSelectedItem();
+            //UseSelectedItem();
         }
 
         if (Input.GetKeyDown(KeyCode.F))
@@ -99,22 +97,5 @@ public class Player : MonoBehaviour
     private void Die()
     {
         UnityEngine.SceneManagement.SceneManager.LoadScene("GameScene");
-    }
-
-    void UseSelectedItem()
-    {
-        if (inventory == null) return;
-
-        if (inventory.selectedHotbarIndex < inventory.slots.Count)
-        {
-            var slot = inventory.slots[inventory.selectedHotbarIndex];
-            Debug.Log("Using: " + slot.item.itemName);
-            slot.quantity--;
-
-            if (slot.quantity <= 0)
-            {
-                inventory.slots.RemoveAt(inventory.selectedHotbarIndex);
-            }
-        }
     }
 }
