@@ -1,21 +1,18 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class SpawnManager : MonoBehaviour
 {
     public GameObject enemyPrefab;
 
     private Transform[] spawnPoints;
+    private List<GameObject> activeEnemies = new List<GameObject>();
 
     void Start()
     {
-        Debug.Log($"SpawnManager Start — direct child count: {transform.childCount}");
-
         spawnPoints = new Transform[transform.childCount];
         for (int i = 0; i < transform.childCount; i++)
-        {
             spawnPoints[i] = transform.GetChild(i);
-            Debug.Log($"Spawn point {i}: {spawnPoints[i].name} at {spawnPoints[i].position}");
-        }
 
         if (spawnPoints.Length == 0)
         {
@@ -29,23 +26,40 @@ public class SpawnManager : MonoBehaviour
             return;
         }
 
-        SpawnOne();
+        SpawnAll();
     }
 
-    void SpawnOne()
+    void SpawnAll()
     {
-        Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
-        Debug.Log($"Spawning at {spawnPoint.name} ({spawnPoint.position})");
-
-        GameObject newEnemy = Instantiate(enemyPrefab, spawnPoint.position, Quaternion.identity);
-        Debug.Log($"Spawned: {newEnemy.name}");
-
         Player player = FindAnyObjectByType<Player>();
-        if (player != null)
+
+        foreach (Transform spawnPoint in spawnPoints)
         {
-            cog_behavior cog = newEnemy.GetComponent<cog_behavior>();
-            if (cog != null)
-                cog.player = player.transform;
+            GameObject newEnemy = Instantiate(enemyPrefab, spawnPoint.position, Quaternion.identity);
+            activeEnemies.Add(newEnemy);
+            Debug.Log($"Spawned {newEnemy.name} at {spawnPoint.name}");
+
+            if (player != null)
+            {
+                cog_behavior cog = newEnemy.GetComponent<cog_behavior>();
+                if (cog != null)
+                    cog.player = player.transform;
+            }
         }
+    }
+
+    // Called by Player.cs when the player dies
+    public void ResetAll()
+    {
+        // Destroy all existing enemies
+        foreach (GameObject enemy in activeEnemies)
+        {
+            if (enemy != null)
+                Destroy(enemy);
+        }
+        activeEnemies.Clear();
+
+        // Respawn fresh enemies at all spawn points
+        SpawnAll();
     }
 }
