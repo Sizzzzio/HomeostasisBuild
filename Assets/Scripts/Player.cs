@@ -20,6 +20,7 @@ public class Player : MonoBehaviour
     private SpriteRenderer sp;
     private MeleeAttack meleeAttack;
     private SpawnManager spawnManager;
+    private ItemManager itemManager;
 
     void Start()
     {
@@ -27,6 +28,7 @@ public class Player : MonoBehaviour
         sp = GetComponent<SpriteRenderer>();
         meleeAttack = GetComponent<MeleeAttack>();
         spawnManager = FindAnyObjectByType<SpawnManager>();
+        itemManager = FindAnyObjectByType<ItemManager>();
     }
 
     void Update()
@@ -36,11 +38,6 @@ public class Player : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-
-        if (Input.GetKeyDown(KeyCode.E))
-        {
-            // reserved for interaction
-        }
 
         if (Input.GetKeyDown(KeyCode.F))
             meleeAttack?.TryAttack();
@@ -126,9 +123,31 @@ public class Player : MonoBehaviour
         if (spawnManager != null)
             spawnManager.ResetAll();
 
+        // Reset all items — pickups reappear, abilities stripped
+        if (itemManager != null)
+            itemManager.ResetAll();
+
+        // Strip all abilities from player
+        ResetAbilities();
+
         // Brief invincibility after respawn
         StartCoroutine(InvincibilityFrames());
 
         Debug.Log("Player died — all entities reset.");
+    }
+
+    private void ResetAbilities()
+    {
+        // Disable sawblade launcher
+        SawbladeLauncher launcher = GetComponent<SawbladeLauncher>();
+        if (launcher != null)
+            launcher.enabled = false;
+
+        // Hide sawblade visual
+        Transform sawbladeVisual = transform.Find("SawbladeVisual");
+        if (sawbladeVisual != null)
+            sawbladeVisual.gameObject.SetActive(false);
+
+        // Add more ability resets here as you build them
     }
 }
