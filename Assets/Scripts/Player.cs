@@ -12,8 +12,19 @@ public class Player : MonoBehaviour
     public LayerMask groundLayer;
     public Transform respawnPoint;
 
+    [Header("Wall Jump")]
+    public Transform wallCheckLeft;         // Empty child GameObject on the left side of player
+    public Transform wallCheckRight;        // Empty child GameObject on the right side of player
+    public float wallCheckRadius = 0.2f;
+    public float wallJumpForceX = 8f;       // How far away from the wall
+    public float wallJumpForceY = 10f;      // How high up the wall jump goes
+    public float wallSlideSpeed = 1f;       // How fast the player slides down a wall
+
     private Rigidbody2D rb;
     private bool isGrounded;
+    private bool isTouchingWallLeft;
+    private bool isTouchingWallRight;
+    private bool isWallSliding;
     private bool isInvincible = false;
     public float invincibilityDuration = 0.5f;
 
@@ -22,6 +33,8 @@ public class Player : MonoBehaviour
     private SpawnManager spawnManager;
     private ItemManager itemManager;
 
+    private Vector3 lastGroundedPosition;
+
     void Start()
     {
         rb = GetComponent<Rigidbody2D>();
@@ -29,6 +42,11 @@ public class Player : MonoBehaviour
         meleeAttack = GetComponent<MeleeAttack>();
         spawnManager = FindAnyObjectByType<SpawnManager>();
         itemManager = FindAnyObjectByType<ItemManager>();
+
+        if (respawnPoint != null)
+            lastGroundedPosition = respawnPoint.position;
+        else
+            lastGroundedPosition = transform.position;
     }
 
     void Update()
@@ -36,16 +54,47 @@ public class Player : MonoBehaviour
         float moveInput = Input.GetAxis("Horizontal");
         rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
 
-        if (Input.GetKeyDown(KeyCode.Space) && isGrounded)
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+        // Wall slide — slow fall when pressing into a wall in the air
+        isWallSliding = (isTouchingWallLeft || isTouchingWallRight) && !isGrounded && rb.linearVelocity.y < 0;
+        if (isWallSliding)
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, -wallSlideSpeed);
+
+        // Jump — normal or wall jump
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            if (isGrounded)
+            {
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+            }
+            else if (isTouchingWallLeft)
+            {
+                // Push right and up off the left wall
+                rb.linearVelocity = new Vector2(wallJumpForceX, wallJumpForceY);
+            }
+            else if (isTouchingWallRight)
+            {
+                // Push left and up off the right wall
+                rb.linearVelocity = new Vector2(-wallJumpForceX, wallJumpForceY);
+            }
+        }
 
         if (Input.GetKeyDown(KeyCode.F))
             meleeAttack?.TryAttack();
+
+        if (isGrounded)
+            lastGroundedPosition = transform.position;
     }
 
     private void FixedUpdate()
     {
         isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+
+        if (wallCheckLeft != null)
+            isTouchingWallLeft = Physics2D.OverlapCircle(wallCheckLeft.position, wallCheckRadius, groundLayer);
+        if (wallCheckRight != null)
+            isTouchingWallRight = Physics2D.OverlapCircle(wallCheckRight.position, wallCheckRadius, groundLayer);
+
+        Debug.Log($"grounded: {isGrounded}, wallLeft: {isTouchingWallLeft}, wallRight: {isTouchingWallRight}");
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -89,6 +138,30 @@ public class Player : MonoBehaviour
             Die();
     }
 
+    public void FallDeath(int damage)
+    {
+        if (isInvincible) return;
+
+        health -= damage;
+        health = Mathf.Max(health, 0);
+
+        Debug.Log($"Player fell! Took {damage} damage. HP: {health}/{maxHealth}");
+
+        transform.position = lastGroundedPosition;
+        rb.linearVelocity = Vector2.zero;
+
+        StartCoroutine(InvincibilityFrames());
+
+        if (health <= 0)
+            Die();
+    }
+
+    public void UpdateCheckpoint(Vector3 position)
+    {
+        lastGroundedPosition = position;
+        Debug.Log($"Checkpoint saved at {position}");
+    }
+
     private IEnumerator InvincibilityFrames()
     {
         isInvincible = true;
@@ -107,30 +180,23 @@ public class Player : MonoBehaviour
 
     private void Die()
     {
-        // Reset health
         health = maxHealth;
 
-        // Move to respawn point
         if (respawnPoint != null)
             transform.position = respawnPoint.position;
         else
             Debug.LogWarning("No respawn point assigned on Player!");
 
-        // Stop momentum
         rb.linearVelocity = Vector2.zero;
 
-        // Reset all enemies
         if (spawnManager != null)
             spawnManager.ResetAll();
 
-        // Reset all items — pickups reappear, abilities stripped
         if (itemManager != null)
             itemManager.ResetAll();
 
-        // Strip all abilities from player
         ResetAbilities();
 
-        // Brief invincibility after respawn
         StartCoroutine(InvincibilityFrames());
 
         Debug.Log("Player died — all entities reset.");
@@ -138,16 +204,14 @@ public class Player : MonoBehaviour
 
     private void ResetAbilities()
     {
-        // Disable sawblade launcher
         SawbladeLauncher launcher = GetComponent<SawbladeLauncher>();
         if (launcher != null)
             launcher.enabled = false;
 
-        // Hide sawblade visual
         Transform sawbladeVisual = transform.Find("SawbladeVisual");
         if (sawbladeVisual != null)
             sawbladeVisual.gameObject.SetActive(false);
-
-        // Add more ability resets here as you build them
     }
+
+
 }
