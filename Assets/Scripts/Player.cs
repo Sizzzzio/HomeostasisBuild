@@ -32,6 +32,7 @@ public class Player : MonoBehaviour
     private SpriteRenderer sp;
     private MeleeAttack meleeAttack;
     private SpawnManager spawnManager;
+    private MeleeSpawnManager meleeSpawnManager;
     private ItemManager itemManager;
     private AirDash airDash;
 
@@ -44,6 +45,7 @@ public class Player : MonoBehaviour
         meleeAttack = GetComponent<MeleeAttack>();
         airDash = GetComponent<AirDash>();
         spawnManager = FindAnyObjectByType<SpawnManager>();
+        meleeSpawnManager = FindAnyObjectByType<MeleeSpawnManager>();
         itemManager = FindAnyObjectByType<ItemManager>();
 
         if (respawnPoint != null)
@@ -80,9 +82,7 @@ public class Player : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
         {
             if (isGrounded)
-            {
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
-            }
             else if (isTouchingWallLeft)
             {
                 rb.linearVelocity = new Vector2(wallJumpForceX, wallJumpForceY);
@@ -195,6 +195,9 @@ public class Player : MonoBehaviour
 
     private void Die()
     {
+        // Stop all coroutines so dash coroutine can't leave gravity at 0
+        StopAllCoroutines();
+
         health = maxHealth;
 
         if (respawnPoint != null)
@@ -203,10 +206,13 @@ public class Player : MonoBehaviour
             Debug.LogWarning("No respawn point assigned on Player!");
 
         rb.linearVelocity = Vector2.zero;
-        rb.gravityScale = 1f;
+        rb.gravityScale = 1f;   // Always reset gravity on death
 
         if (spawnManager != null)
             spawnManager.ResetAll();
+
+        if (meleeSpawnManager != null)
+            meleeSpawnManager.ResetAll();
 
         if (itemManager != null)
             itemManager.ResetAll();
@@ -229,6 +235,9 @@ public class Player : MonoBehaviour
             sawbladeVisual.gameObject.SetActive(false);
 
         if (airDash != null)
+        {
             airDash.enabled = false;
+            rb.gravityScale = 1f;   // Extra safety in case dash was mid-flight
+        }
     }
 }

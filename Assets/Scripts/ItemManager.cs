@@ -4,21 +4,22 @@ public class ItemManager : MonoBehaviour
 {
     void Start()
     {
-        // Each child of ItemManager is an item spawn point
-        // The child must have an ItemPickup component on it
         foreach (Transform child in transform)
         {
             ItemPickup pickup = child.GetComponent<ItemPickup>();
             if (pickup == null)
                 Debug.LogWarning($"ItemManager: {child.name} has no ItemPickup component!");
+            else
+                Debug.Log($"ItemManager: registered {child.name}");
         }
     }
 
-    // Called by Player.cs on death — respawns all pickups that were collected
     public void ResetAll()
     {
+        Debug.Log($"ItemManager.ResetAll called — child count: {transform.childCount}");
         foreach (Transform child in transform)
         {
+            Debug.Log($"ItemManager: re-enabling {child.name}");
             child.gameObject.SetActive(true);
         }
     }

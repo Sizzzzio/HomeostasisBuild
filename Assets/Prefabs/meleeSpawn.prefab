@@ -195,8 +195,8 @@ MonoBehaviour:
   attackColor: {r: 1, g: 0, b: 0, a: 1}
   attackVisual: {fileID: 3793547040376938561}
   visualDuration: 0.2
-  baseVisualScaleX: 1
-  maxVisualScaleX: 2.5
+  baseVisualScaleX: 2
+  maxVisualScaleX: 3
 --- !u!1 &3793547040376938561
 GameObject:
   m_ObjectHideFlags: 0

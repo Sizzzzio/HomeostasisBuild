@@ -4,7 +4,6 @@ public enum ItemType
 {
     SawbladeLauncher,
     AirDash,
-    // Add more item types here as you build them
 }
 
 public class ItemPickup : MonoBehaviour
@@ -17,10 +16,22 @@ public class ItemPickup : MonoBehaviour
     public float bobHeight = 0.2f;
 
     private Vector3 startPosition;
+    private bool initialized = false;   // Prevent Start() resetting position on re-enable
 
     void Start()
     {
-        startPosition = transform.position;
+        if (!initialized)
+        {
+            startPosition = transform.position;
+            initialized = true;
+        }
+    }
+
+    void OnEnable()
+    {
+        // When re-enabled by ItemManager, restore original position
+        if (initialized)
+            transform.position = startPosition;
     }
 
     void Update()
@@ -53,6 +64,8 @@ public class ItemPickup : MonoBehaviour
 
                     Debug.Log("Picked up: Sawblade Launcher");
                 }
+                else
+                    Debug.LogWarning("SawbladeLauncher component not found on Player!");
                 break;
 
             case ItemType.AirDash:
@@ -62,6 +75,8 @@ public class ItemPickup : MonoBehaviour
                     airDash.enabled = true;
                     Debug.Log("Picked up: Air Dash");
                 }
+                else
+                    Debug.LogWarning("AirDash component not found on Player!");
                 break;
         }
     }
