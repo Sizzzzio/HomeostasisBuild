@@ -4,6 +4,7 @@ public enum ItemType
 {
     SawbladeLauncher,
     AirDash,
+    MeatyMush,
 }
 
 public class ItemPickup : MonoBehaviour
@@ -11,12 +12,22 @@ public class ItemPickup : MonoBehaviour
     [Header("Item Settings")]
     public ItemType itemType;
 
+    [Header("Description")]
+    public string itemName = "Item";
+    [TextArea(2, 4)]
+    public string itemDescription = "A mysterious item.";
+
+    [Header("Meaty Mush Stats")]
+    public float speedBoost = 1f;
+    public int healthBoost = 25;
+    public int attackBoost = 10;
+
     [Header("Visuals")]
     public float bobSpeed = 2f;
     public float bobHeight = 0.2f;
 
     private Vector3 startPosition;
-    private bool initialized = false;   // Prevent Start() resetting position on re-enable
+    private bool initialized = false;
 
     void Start()
     {
@@ -29,9 +40,13 @@ public class ItemPickup : MonoBehaviour
 
     void OnEnable()
     {
-        // When re-enabled by ItemManager, restore original position
         if (initialized)
             transform.position = startPosition;
+    }
+
+    void OnDisable()
+    {
+        ItemDescriptionUI.Instance?.Hide();
     }
 
     void Update()
@@ -43,7 +58,6 @@ public class ItemPickup : MonoBehaviour
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!other.CompareTag("Player")) return;
-
         ApplyItemToPlayer(other.gameObject);
         gameObject.SetActive(false);
     }
@@ -57,15 +71,11 @@ public class ItemPickup : MonoBehaviour
                 if (launcher != null)
                 {
                     launcher.enabled = true;
-
                     Transform sawbladeVisual = player.transform.Find("SawbladeVisual");
                     if (sawbladeVisual != null)
                         sawbladeVisual.gameObject.SetActive(true);
-
                     Debug.Log("Picked up: Sawblade Launcher");
                 }
-                else
-                    Debug.LogWarning("SawbladeLauncher component not found on Player!");
                 break;
 
             case ItemType.AirDash:
@@ -75,8 +85,25 @@ public class ItemPickup : MonoBehaviour
                     airDash.enabled = true;
                     Debug.Log("Picked up: Air Dash");
                 }
-                else
-                    Debug.LogWarning("AirDash component not found on Player!");
+                break;
+
+            case ItemType.MeatyMush:
+                Player playerScript = player.GetComponent<Player>();
+                MeleeAttack meleeAttack = player.GetComponent<MeleeAttack>();
+
+                if (playerScript != null)
+                {
+                    playerScript.moveSpeed += speedBoost;
+                    playerScript.maxHealth += healthBoost;
+                    playerScript.health = Mathf.Min(playerScript.health + healthBoost, playerScript.maxHealth);
+                    Debug.Log($"Meaty Mush: speed +{speedBoost}, health +{healthBoost}");
+                }
+
+                if (meleeAttack != null)
+                {
+                    meleeAttack.damage += attackBoost;
+                    Debug.Log($"Meaty Mush: attack +{attackBoost}");
+                }
                 break;
         }
     }

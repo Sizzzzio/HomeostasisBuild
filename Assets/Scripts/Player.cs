@@ -35,11 +35,15 @@ public class Player : MonoBehaviour
     private MeleeSpawnManager meleeSpawnManager;
     private ItemManager itemManager;
     private AirDash airDash;
+    private float baseMoveSpeed;
+    private int baseMaxHealth;
+    private int baseMeleeAttackDamage;
 
     private Vector3 lastGroundedPosition;
 
     void Start()
     {
+
         rb = GetComponent<Rigidbody2D>();
         sp = GetComponent<SpriteRenderer>();
         meleeAttack = GetComponent<MeleeAttack>();
@@ -52,6 +56,9 @@ public class Player : MonoBehaviour
             lastGroundedPosition = respawnPoint.position;
         else
             lastGroundedPosition = transform.position;
+        baseMoveSpeed = moveSpeed;
+        baseMaxHealth = maxHealth;
+        baseMeleeAttackDamage = meleeAttack != null ? meleeAttack.damage : 0;
     }
 
     void Update()
@@ -198,6 +205,14 @@ public class Player : MonoBehaviour
         // Stop all coroutines so dash coroutine can't leave gravity at 0
         StopAllCoroutines();
 
+        // Added to Die() before respawn
+        moveSpeed = baseMoveSpeed;
+        maxHealth = baseMaxHealth;
+        health = baseMaxHealth;
+
+        if (meleeAttack != null)
+            meleeAttack.damage = baseMeleeAttackDamage;
+
         health = maxHealth;
 
         if (respawnPoint != null)
@@ -222,6 +237,7 @@ public class Player : MonoBehaviour
         StartCoroutine(InvincibilityFrames());
 
         Debug.Log("Player died — all entities reset.");
+
     }
 
     private void ResetAbilities()
