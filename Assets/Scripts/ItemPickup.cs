@@ -3,10 +3,8 @@ using UnityEngine;
 public enum ItemType
 {
     SawbladeLauncher,
+    AirDash,
     // Add more item types here as you build them
-    // Shield,
-    // SpeedBoost,
-    // DoubleJump,
 }
 
 public class ItemPickup : MonoBehaviour
@@ -27,7 +25,6 @@ public class ItemPickup : MonoBehaviour
 
     void Update()
     {
-        // Bob up and down
         float newY = startPosition.y + Mathf.Sin(Time.time * bobSpeed) * bobHeight;
         transform.position = new Vector3(startPosition.x, newY, startPosition.z);
     }
@@ -37,8 +34,6 @@ public class ItemPickup : MonoBehaviour
         if (!other.CompareTag("Player")) return;
 
         ApplyItemToPlayer(other.gameObject);
-
-        // Disable instead of destroy so ItemManager can respawn it on player death
         gameObject.SetActive(false);
     }
 
@@ -60,10 +55,14 @@ public class ItemPickup : MonoBehaviour
                 }
                 break;
 
-            // Add more cases here as you add items
-            // case ItemType.Shield:
-            //     player.GetComponent<Shield>().enabled = true;
-            //     break;
+            case ItemType.AirDash:
+                AirDash airDash = player.GetComponent<AirDash>();
+                if (airDash != null)
+                {
+                    airDash.enabled = true;
+                    Debug.Log("Picked up: Air Dash");
+                }
+                break;
         }
     }
 }

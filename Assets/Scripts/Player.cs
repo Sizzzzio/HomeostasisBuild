@@ -11,27 +11,29 @@ public class Player : MonoBehaviour
     public float groundCheckRadius = 0.2f;
     public LayerMask groundLayer;
     public Transform respawnPoint;
+    public float invincibilityDuration = 0.5f;
 
     [Header("Wall Jump")]
-    public Transform wallCheckLeft;         // Empty child GameObject on the left side of player
-    public Transform wallCheckRight;        // Empty child GameObject on the right side of player
-    public float wallCheckRadius = 0.2f;
-    public float wallJumpForceX = 8f;       // How far away from the wall
-    public float wallJumpForceY = 10f;      // How high up the wall jump goes
-    public float wallSlideSpeed = 1f;       // How fast the player slides down a wall
+    public Transform wallCheckLeft;
+    public Transform wallCheckRight;
+    public float wallCheckRadius = 0.25f;
+    public float wallJumpForceX = 8f;
+    public float wallJumpForceY = 10f;
+    public float wallSlideSpeed = 1.5f;
 
     private Rigidbody2D rb;
     private bool isGrounded;
+    private bool wasGrounded = false;
+    private bool isInvincible = false;
     private bool isTouchingWallLeft;
     private bool isTouchingWallRight;
     private bool isWallSliding;
-    private bool isInvincible = false;
-    public float invincibilityDuration = 0.5f;
 
     private SpriteRenderer sp;
     private MeleeAttack meleeAttack;
     private SpawnManager spawnManager;
     private ItemManager itemManager;
+    private AirDash airDash;
 
     private Vector3 lastGroundedPosition;
 
@@ -40,6 +42,7 @@ public class Player : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         sp = GetComponent<SpriteRenderer>();
         meleeAttack = GetComponent<MeleeAttack>();
+        airDash = GetComponent<AirDash>();
         spawnManager = FindAnyObjectByType<SpawnManager>();
         itemManager = FindAnyObjectByType<ItemManager>();
 
@@ -52,14 +55,28 @@ public class Player : MonoBehaviour
     void Update()
     {
         float moveInput = Input.GetAxis("Horizontal");
-        rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
 
-        // Wall slide — slow fall when pressing into a wall in the air
+        bool isDashing = airDash != null && airDash.IsDashing();
+        if (!isDashing)
+            rb.linearVelocity = new Vector2(moveInput * moveSpeed, rb.linearVelocity.y);
+
+        // Flip sprite
+        if (moveInput > 0)
+            sp.flipX = false;
+        else if (moveInput < 0)
+            sp.flipX = true;
+
+        // Wall slide
         isWallSliding = (isTouchingWallLeft || isTouchingWallRight) && !isGrounded && rb.linearVelocity.y < 0;
         if (isWallSliding)
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, -wallSlideSpeed);
 
-        // Jump — normal or wall jump
+        // Reset air dash on landing
+        if (isGrounded && !wasGrounded)
+            airDash?.ResetDash();
+        wasGrounded = isGrounded;
+
+        // Jump / wall jump
         if (Input.GetKeyDown(KeyCode.Space))
         {
             if (isGrounded)
@@ -68,13 +85,13 @@ public class Player : MonoBehaviour
             }
             else if (isTouchingWallLeft)
             {
-                // Push right and up off the left wall
                 rb.linearVelocity = new Vector2(wallJumpForceX, wallJumpForceY);
+                sp.flipX = false;
             }
             else if (isTouchingWallRight)
             {
-                // Push left and up off the right wall
                 rb.linearVelocity = new Vector2(-wallJumpForceX, wallJumpForceY);
+                sp.flipX = true;
             }
         }
 
@@ -93,8 +110,6 @@ public class Player : MonoBehaviour
             isTouchingWallLeft = Physics2D.OverlapCircle(wallCheckLeft.position, wallCheckRadius, groundLayer);
         if (wallCheckRight != null)
             isTouchingWallRight = Physics2D.OverlapCircle(wallCheckRight.position, wallCheckRadius, groundLayer);
-
-        Debug.Log($"grounded: {isGrounded}, wallLeft: {isTouchingWallLeft}, wallRight: {isTouchingWallRight}");
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -188,6 +203,7 @@ public class Player : MonoBehaviour
             Debug.LogWarning("No respawn point assigned on Player!");
 
         rb.linearVelocity = Vector2.zero;
+        rb.gravityScale = 1f;
 
         if (spawnManager != null)
             spawnManager.ResetAll();
@@ -211,7 +227,8 @@ public class Player : MonoBehaviour
         Transform sawbladeVisual = transform.Find("SawbladeVisual");
         if (sawbladeVisual != null)
             sawbladeVisual.gameObject.SetActive(false);
+
+        if (airDash != null)
+            airDash.enabled = false;
     }
-
-
 }
