@@ -5,6 +5,9 @@ public enum ItemType
     SawbladeLauncher,
     AirDash,
     MeatyMush,
+    BushBum,
+    LaserImplant,
+    DruidHeart,
 }
 
 public class ItemPickup : MonoBehaviour
@@ -21,6 +24,12 @@ public class ItemPickup : MonoBehaviour
     public float speedBoost = 1f;
     public int healthBoost = 25;
     public int attackBoost = 10;
+
+    [Header("Bush Bum Settings")]
+    public GameObject bushBumPrefab;
+
+    [Header("Player Visual References")]
+    public GameObject itemVisual;       // Drag the visual GameObject from the Player here
 
     [Header("Visuals")]
     public float bobSpeed = 2f;
@@ -71,9 +80,15 @@ public class ItemPickup : MonoBehaviour
                 if (launcher != null)
                 {
                     launcher.enabled = true;
-                    Transform sawbladeVisual = player.transform.Find("SawbladeVisual");
-                    if (sawbladeVisual != null)
-                        sawbladeVisual.gameObject.SetActive(true);
+
+                    // Show visual via direct reference or find
+                    if (itemVisual != null)
+                        itemVisual.SetActive(true);
+                    else
+                    {
+                        Transform v = player.transform.Find("SawbladeVisual");
+                        if (v != null) v.gameObject.SetActive(true);
+                    }
                     Debug.Log("Picked up: Sawblade Launcher");
                 }
                 break;
@@ -83,6 +98,8 @@ public class ItemPickup : MonoBehaviour
                 if (airDash != null)
                 {
                     airDash.enabled = true;
+                    if (itemVisual != null)
+                        itemVisual.SetActive(true);
                     Debug.Log("Picked up: Air Dash");
                 }
                 break;
@@ -90,19 +107,52 @@ public class ItemPickup : MonoBehaviour
             case ItemType.MeatyMush:
                 Player playerScript = player.GetComponent<Player>();
                 MeleeAttack meleeAttack = player.GetComponent<MeleeAttack>();
-
                 if (playerScript != null)
                 {
                     playerScript.moveSpeed += speedBoost;
                     playerScript.maxHealth += healthBoost;
                     playerScript.health = Mathf.Min(playerScript.health + healthBoost, playerScript.maxHealth);
+                    if (playerScript.mushVisual != null)
+                        playerScript.mushVisual.SetActive(true);
                     Debug.Log($"Meaty Mush: speed +{speedBoost}, health +{healthBoost}");
                 }
-
                 if (meleeAttack != null)
                 {
                     meleeAttack.damage += attackBoost;
                     Debug.Log($"Meaty Mush: attack +{attackBoost}");
+                }
+                break;
+
+            case ItemType.BushBum:
+                if (bushBumPrefab != null)
+                {
+                    GameObject bushBum = Instantiate(bushBumPrefab, player.transform.position + new Vector3(1f, 0f, 0f), Quaternion.identity);
+                    Player p = player.GetComponent<Player>();
+                    if (p != null)
+                        p.SetBushBum(bushBum);
+                    Debug.Log("Picked up: Bush Bum");
+                }
+                break;
+
+            case ItemType.LaserImplant:
+                LaserImplant laser = player.GetComponent<LaserImplant>();
+                if (laser != null)
+                {
+                    laser.enabled = true;
+                    if (itemVisual != null)
+                        itemVisual.SetActive(true);
+                    Debug.Log("Picked up: Laser Implant");
+                }
+                break;
+
+            case ItemType.DruidHeart:
+                DruidHeart druid = player.GetComponent<DruidHeart>();
+                if (druid != null)
+                {
+                    druid.enabled = true;
+                    if (itemVisual != null)
+                        itemVisual.SetActive(true);
+                    Debug.Log("Picked up: Druid's Heart");
                 }
                 break;
         }

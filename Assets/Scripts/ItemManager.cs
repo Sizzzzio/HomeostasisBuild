@@ -1,11 +1,16 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class ItemManager : MonoBehaviour
 {
+    // Store references at start so we don't lose them when objects deactivate
+    private List<GameObject> registeredPickups = new List<GameObject>();
+
     void Start()
     {
         foreach (Transform child in transform)
         {
+            registeredPickups.Add(child.gameObject);
             ItemPickup pickup = child.GetComponent<ItemPickup>();
             if (pickup == null)
                 Debug.LogWarning($"ItemManager: {child.name} has no ItemPickup component!");
@@ -16,11 +21,14 @@ public class ItemManager : MonoBehaviour
 
     public void ResetAll()
     {
-        Debug.Log($"ItemManager.ResetAll called — child count: {transform.childCount}");
-        foreach (Transform child in transform)
+        Debug.Log($"ItemManager.ResetAll called — registered count: {registeredPickups.Count}");
+        foreach (GameObject pickup in registeredPickups)
         {
-            Debug.Log($"ItemManager: re-enabling {child.name}");
-            child.gameObject.SetActive(true);
+            if (pickup != null)
+            {
+                Debug.Log($"ItemManager: re-enabling {pickup.name}");
+                pickup.SetActive(true);
+            }
         }
     }
 }
