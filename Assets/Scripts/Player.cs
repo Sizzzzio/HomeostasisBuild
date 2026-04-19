@@ -14,12 +14,12 @@ public class Player : MonoBehaviour
     public float invincibilityDuration = 0.5f;
     public float enemyKnockbackForce = 8f;
 
-    [Header("Managers — assign in Inspector")]
+    [Header("Managers  assign in Inspector")]
     public SpawnManager spawnManager;
     public MeleeSpawnManager meleeSpawnManager;
     public ItemManager itemManager;
 
-    [Header("Item Visuals — assign in Inspector")]
+    [Header("Item Visuals  assign in Inspector")]
     public GameObject sawbladeVisual;
     public GameObject laserImplantVisual;
     public GameObject druidHeartVisual;
@@ -161,8 +161,9 @@ public class Player : MonoBehaviour
         if (isDead) return;
         if (collision.gameObject.CompareTag("Damage"))
         {
-            // Teleport back to last safe ground and take damage
-            FallDeath(25);
+            TakeDamage(25);
+            if (health > 0)
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
         }
     }
 
@@ -183,11 +184,10 @@ public class Player : MonoBehaviour
         if (cog != null)
         {
             TakeDamage(cog.damage);
-            // Knockback away from enemy
             if (health > 0)
             {
                 Vector2 knockDir = (transform.position - other.transform.position).normalized;
-                rb.linearVelocity = new Vector2(knockDir.x * enemyKnockbackForce, enemyKnockbackForce * 0.6f);
+                rb.linearVelocity = new Vector2(knockDir.x * enemyKnockbackForce, jumpForce);
             }
         }
     }
@@ -284,7 +284,7 @@ public class Player : MonoBehaviour
         isDead = false;
         StartCoroutine(InvincibilityFrames());
 
-        Debug.Log("Player died — all entities reset.");
+        Debug.Log("Player died  all entities reset.");
     }
 
     private void ResetAbilities()
