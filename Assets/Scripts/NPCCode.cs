@@ -7,7 +7,9 @@ public class NPCCode : MonoBehaviour
 {
     public GameObject dialoguePanel;
     public TMP_Text dialogueText;
+    public TMP_Text npcNameText;        // Drag NPCName TMP text here
     public string[] dialogue;
+    public string npcName;              // Type the NPC name here
     private int index;
 
     public GameObject continueButton;
@@ -15,16 +17,18 @@ public class NPCCode : MonoBehaviour
     public bool playerIsClose;
 
     [Header("NPC Image")]
-    public Image npcImage;              // Assign in Inspector
-    public Sprite npcSprite;            // Assign your custom NPC sprite here
+    public Image npcImage;
+    public Sprite npcSprite;
 
     void Start()
     {
         dialogueText.text = "";
 
-        // Set custom NPC image if assigned
         if (npcImage != null && npcSprite != null)
             npcImage.sprite = npcSprite;
+
+        if (npcNameText != null)
+            npcNameText.text = npcName;
     }
 
     void Update()
@@ -53,7 +57,6 @@ public class NPCCode : MonoBehaviour
         StopAllCoroutines();
     }
 
-    // Called by Player.cs on death to reset dialogue state
     public void ResetDialogue()
     {
         zeroText();
@@ -62,6 +65,8 @@ public class NPCCode : MonoBehaviour
 
     IEnumerator Typing()
     {
+        // Clear text before typing new line
+        dialogueText.text = "";
         foreach (char letter in dialogue[index].ToCharArray())
         {
             dialogueText.text += letter;
