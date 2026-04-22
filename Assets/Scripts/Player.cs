@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 public class Player : MonoBehaviour
@@ -14,12 +14,12 @@ public class Player : MonoBehaviour
     public float invincibilityDuration = 0.5f;
     public float enemyKnockbackForce = 8f;
 
-    [Header("Managers  assign in Inspector")]
+    [Header("Managers — assign in Inspector")]
     public SpawnManager spawnManager;
     public MeleeSpawnManager meleeSpawnManager;
     public ItemManager itemManager;
 
-    [Header("Item Visuals  assign in Inspector")]
+    [Header("Item Visuals — assign in Inspector")]
     public GameObject sawbladeVisual;
     public GameObject laserImplantVisual;
     public GameObject druidHeartVisual;
@@ -34,6 +34,7 @@ public class Player : MonoBehaviour
     private SpriteRenderer sp;
     private MeleeAttack meleeAttack;
     private AirDash airDash;
+    private BossSpawner bossSpawner;        // ← added
 
     private float baseMoveSpeed;
     private float baseJumpForce;
@@ -58,6 +59,7 @@ public class Player : MonoBehaviour
             meleeSpawnManager = FindAnyObjectByType<MeleeSpawnManager>();
         if (itemManager == null)
             itemManager = FindAnyObjectByType<ItemManager>();
+        bossSpawner = FindAnyObjectByType<BossSpawner>();
 
         baseMoveSpeed = moveSpeed;
         baseJumpForce = jumpForce;
@@ -117,7 +119,6 @@ public class Player : MonoBehaviour
             meleeAttack?.TryAttack();
         }
 
-        // Only save grounded position when not near a hazard
         if (isGrounded && !IsNearHazard())
             lastGroundedPosition = transform.position;
     }
@@ -137,12 +138,10 @@ public class Player : MonoBehaviour
     {
         if (meleeAttack == null || meleeAttack.attackPoint == null) return;
 
-        // Move attack point to correct side
         Vector3 localPos = meleeAttack.attackPoint.localPosition;
         localPos.x = Mathf.Abs(localPos.x) * direction;
         meleeAttack.attackPoint.localPosition = localPos;
 
-        // Flip the slash visual sprite if it exists
         if (meleeAttack.attackVisual != null)
         {
             SpriteRenderer slashSr = meleeAttack.attackVisual.GetComponent<SpriteRenderer>();
@@ -180,6 +179,10 @@ public class Player : MonoBehaviour
     private void TryTakeDamageFromEnemy(GameObject other)
     {
         if (other == null || isDead) return;
+
+        // Bosses handle their own contact damage — skip them here
+        if (other.GetComponent<BossBase>() != null) return;
+
         cog_behavior cog = other.GetComponent<cog_behavior>();
         if (cog != null)
         {
@@ -277,6 +280,14 @@ public class Player : MonoBehaviour
         if (itemManager != null)
             itemManager.ResetAll();
 
+        BossBase activeBoss = FindAnyObjectByType<BossBase>();
+        if (activeBoss != null)
+            Destroy(activeBoss.gameObject);
+        if (bossSpawner != null)
+            bossSpawner.ResetSpawner();
+        if (EnemyKillTracker.Instance != null)
+            EnemyKillTracker.Instance.Reset();
+
         NPCCode[] npcs = FindObjectsByType<NPCCode>(FindObjectsSortMode.None);
         foreach (NPCCode npc in npcs)
             npc.ResetDialogue();
@@ -284,7 +295,7 @@ public class Player : MonoBehaviour
         isDead = false;
         StartCoroutine(InvincibilityFrames());
 
-        Debug.Log("Player died  all entities reset.");
+        Debug.Log("Player died — all entities reset.");
     }
 
     private void ResetAbilities()

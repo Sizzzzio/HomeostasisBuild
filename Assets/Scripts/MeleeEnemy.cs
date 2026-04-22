@@ -194,6 +194,8 @@ public class MeleeEnemy : MonoBehaviour, IDamageable
 
     void Die()
     {
+        if (EnemyKillTracker.Instance != null)
+            EnemyKillTracker.Instance.RegisterKill();
         Destroy(gameObject);
     }
 

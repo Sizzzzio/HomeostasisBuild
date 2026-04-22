@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 1917448039145932839}
   m_Layer: 7
   m_Name: Glob
-  m_TagString: Enemy
+  m_TagString: Damage
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

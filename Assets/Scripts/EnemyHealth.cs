@@ -45,6 +45,8 @@ public class EnemyHealth : MonoBehaviour, IDamageable
 
     void Die()
     {
+        if (EnemyKillTracker.Instance != null)
+            EnemyKillTracker.Instance.RegisterKill();
         Destroy(gameObject);
     }
 }
