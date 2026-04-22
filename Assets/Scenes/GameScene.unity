@@ -6711,7 +6711,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed8b961df3e1ef3488eb7025678e1a6a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EnemyKillTracker
-  killCount: 11
+  killCount: 0
 --- !u!4 &1686831657
 Transform:
   m_ObjectHideFlags: 0
