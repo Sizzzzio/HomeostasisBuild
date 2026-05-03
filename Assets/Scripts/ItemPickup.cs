@@ -1,4 +1,6 @@
 using UnityEngine;
+using TMPro;
+using UnityEngine.UI;
 
 public enum ItemType
 {
@@ -15,7 +17,12 @@ public class ItemPickup : MonoBehaviour
     [Header("Item Settings")]
     public ItemType itemType;
 
-    [Header("Description")]
+    [Header("Description UI — assign same panel for all items")]
+    public GameObject descriptionPanel;
+    public TMP_Text itemNameText;
+    public TMP_Text itemDescText;
+
+    [Header("This Item's Data")]
     public string itemName = "Item";
     [TextArea(2, 4)]
     public string itemDescription = "A mysterious item.";
@@ -29,7 +36,7 @@ public class ItemPickup : MonoBehaviour
     public GameObject bushBumPrefab;
 
     [Header("Player Visual References")]
-    public GameObject itemVisual;       // Drag the visual GameObject from the Player here
+    public GameObject itemVisual;
 
     [Header("Visuals")]
     public float bobSpeed = 2f;
@@ -55,7 +62,7 @@ public class ItemPickup : MonoBehaviour
 
     void OnDisable()
     {
-        ItemDescriptionUI.Instance?.Hide();
+        HideDescription();
     }
 
     void Update()
@@ -67,8 +74,54 @@ public class ItemPickup : MonoBehaviour
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (!other.CompareTag("Player")) return;
-        ApplyItemToPlayer(other.gameObject);
-        gameObject.SetActive(false);
+
+        float dist = Vector2.Distance(transform.position, other.transform.position);
+
+        if (dist <= 0.8f)
+        {
+            // Close enough — pick up
+            HideDescription();
+            AudioManager.Instance?.Play(AudioManager.Instance?.itemPickup);
+            ApplyItemToPlayer(other.gameObject);
+            gameObject.SetActive(false);
+        }
+        else
+        {
+            // Outer range — show description
+            ShowDescription();
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D other)
+    {
+        if (!other.CompareTag("Player")) return;
+        HideDescription();
+    }
+
+    private void OnTriggerStay2D(Collider2D other)
+    {
+        if (!other.CompareTag("Player")) return;
+
+        float dist = Vector2.Distance(transform.position, other.transform.position);
+        if (dist <= 0.8f)
+        {
+            HideDescription();
+            AudioManager.Instance?.Play(AudioManager.Instance?.itemPickup);
+            ApplyItemToPlayer(other.gameObject);
+            gameObject.SetActive(false);
+        }
+    }
+
+    void ShowDescription()
+    {
+        if (descriptionPanel != null) descriptionPanel.SetActive(true);
+        if (itemNameText != null) itemNameText.text = itemName;
+        if (itemDescText != null) itemDescText.text = itemDescription;
+    }
+
+    void HideDescription()
+    {
+        if (descriptionPanel != null) descriptionPanel.SetActive(false);
     }
 
     void ApplyItemToPlayer(GameObject player)
@@ -80,15 +133,8 @@ public class ItemPickup : MonoBehaviour
                 if (launcher != null)
                 {
                     launcher.enabled = true;
-
-                    // Show visual via direct reference or find
-                    if (itemVisual != null)
-                        itemVisual.SetActive(true);
-                    else
-                    {
-                        Transform v = player.transform.Find("SawbladeVisual");
-                        if (v != null) v.gameObject.SetActive(true);
-                    }
+                    if (itemVisual != null) itemVisual.SetActive(true);
+                    else { Transform v = player.transform.Find("SawbladeVisual"); if (v != null) v.gameObject.SetActive(true); }
                     Debug.Log("Picked up: Sawblade Launcher");
                 }
                 break;
@@ -98,8 +144,7 @@ public class ItemPickup : MonoBehaviour
                 if (airDash != null)
                 {
                     airDash.enabled = true;
-                    if (itemVisual != null)
-                        itemVisual.SetActive(true);
+                    if (itemVisual != null) itemVisual.SetActive(true);
                     Debug.Log("Picked up: Air Dash");
                 }
                 break;
@@ -112,15 +157,9 @@ public class ItemPickup : MonoBehaviour
                     playerScript.moveSpeed += speedBoost;
                     playerScript.maxHealth += healthBoost;
                     playerScript.health = Mathf.Min(playerScript.health + healthBoost, playerScript.maxHealth);
-                    if (playerScript.mushVisual != null)
-                        playerScript.mushVisual.SetActive(true);
-                    Debug.Log($"Meaty Mush: speed +{speedBoost}, health +{healthBoost}");
+                    if (playerScript.mushVisual != null) playerScript.mushVisual.SetActive(true);
                 }
-                if (meleeAttack != null)
-                {
-                    meleeAttack.damage += attackBoost;
-                    Debug.Log($"Meaty Mush: attack +{attackBoost}");
-                }
+                if (meleeAttack != null) meleeAttack.damage += attackBoost;
                 break;
 
             case ItemType.BushBum:
@@ -128,9 +167,7 @@ public class ItemPickup : MonoBehaviour
                 {
                     GameObject bushBum = Instantiate(bushBumPrefab, player.transform.position + new Vector3(1f, 0f, 0f), Quaternion.identity);
                     Player p = player.GetComponent<Player>();
-                    if (p != null)
-                        p.SetBushBum(bushBum);
-                    Debug.Log("Picked up: Bush Bum");
+                    if (p != null) p.SetBushBum(bushBum);
                 }
                 break;
 
@@ -139,9 +176,7 @@ public class ItemPickup : MonoBehaviour
                 if (laser != null)
                 {
                     laser.enabled = true;
-                    if (itemVisual != null)
-                        itemVisual.SetActive(true);
-                    Debug.Log("Picked up: Laser Implant");
+                    if (itemVisual != null) itemVisual.SetActive(true);
                 }
                 break;
 
@@ -150,9 +185,7 @@ public class ItemPickup : MonoBehaviour
                 if (druid != null)
                 {
                     druid.enabled = true;
-                    if (itemVisual != null)
-                        itemVisual.SetActive(true);
-                    Debug.Log("Picked up: Druid's Heart");
+                    if (itemVisual != null) itemVisual.SetActive(true);
                 }
                 break;
         }

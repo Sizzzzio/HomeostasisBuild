@@ -5,90 +5,152 @@ using UnityEngine.UI;
 
 public class NPCCode : MonoBehaviour
 {
+    [Header("Shared UI — same for all NPCs")]
     public GameObject dialoguePanel;
     public TMP_Text dialogueText;
-    public TMP_Text npcNameText;        // Drag NPCName TMP text here
-    public string[] dialogue;
-    public string npcName;              // Type the NPC name here
-    private int index;
-
-    public GameObject continueButton;
-    public float wordSpeed;
-    public bool playerIsClose;
-
-    [Header("NPC Image")]
+    public TMP_Text npcNameText;
     public Image npcImage;
+    public GameObject continueButton;
+
+    [Header("This NPC's data")]
+    public string npcName;
     public Sprite npcSprite;
+    public string[] dialogue;
+    public float wordSpeed = 0.05f;
 
-    void Start()
-    {
-        dialogueText.text = "";
+    private int index;
+    private bool playerIsClose;
 
-        if (npcImage != null && npcSprite != null)
-            npcImage.sprite = npcSprite;
-
-        if (npcNameText != null)
-            npcNameText.text = npcName;
-    }
+    // Static so only ONE npc can be active at a time across all instances
+    private static NPCCode activeNPC = null;
+    private static Coroutine activeTypingCoroutine = null;
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.E) && playerIsClose)
+        if (!playerIsClose) return;
+
+        if (Input.GetKeyDown(KeyCode.E))
         {
-            if (dialoguePanel.activeInHierarchy)
-                zeroText();
+            if (dialoguePanel != null && dialoguePanel.activeInHierarchy)
+            {
+                // Only close if THIS npc is the active one
+                if (activeNPC == this)
+                    CloseDialogue();
+            }
             else
             {
-                dialoguePanel.SetActive(true);
-                StartCoroutine(Typing());
+                OpenDialogue();
             }
         }
 
-        if (dialogueText.text == dialogue[index])
-            continueButton.SetActive(true);
+        // Show continue button when line is fully typed
+        if (activeNPC == this && dialoguePanel != null && dialoguePanel.activeInHierarchy)
+        {
+            if (dialogueText != null && index < dialogue.Length &&
+                dialogueText.text == dialogue[index])
+            {
+                if (continueButton != null)
+                    continueButton.SetActive(true);
+            }
+        }
     }
 
-    public void zeroText()
+    void OpenDialogue()
     {
-        dialogueText.text = "";
+        // Stop any previous NPC's coroutine first
+        if (activeNPC != null && activeNPC != this)
+            activeNPC.ForceClose();
+
+        activeNPC = this;
         index = 0;
-        dialoguePanel.SetActive(false);
-        continueButton.SetActive(false);
-        StopAllCoroutines();
+
+        if (npcNameText != null) npcNameText.text = npcName;
+        if (npcImage != null && npcSprite != null) npcImage.sprite = npcSprite;
+
+        if (continueButton != null)
+        {
+            continueButton.SetActive(false);
+            Button btn = continueButton.GetComponent<Button>();
+            if (btn != null)
+            {
+                btn.onClick.RemoveAllListeners();
+                btn.onClick.AddListener(NextLine);
+            }
+        }
+
+        dialoguePanel.SetActive(true);
+        StartTyping();
     }
 
-    public void ResetDialogue()
+    void StartTyping()
     {
-        zeroText();
-        playerIsClose = false;
+        // Stop any running coroutine globally
+        if (activeTypingCoroutine != null)
+            StopCoroutine(activeTypingCoroutine);
+
+        if (dialogueText != null) dialogueText.text = "";
+        activeTypingCoroutine = StartCoroutine(TypeLine());
     }
 
-    IEnumerator Typing()
+    IEnumerator TypeLine()
     {
-        // Clear text before typing new line
-        dialogueText.text = "";
+        if (continueButton != null) continueButton.SetActive(false);
+        if (dialogueText != null) dialogueText.text = "";
+
         foreach (char letter in dialogue[index].ToCharArray())
         {
-            dialogueText.text += letter;
+            if (dialogueText != null)
+                dialogueText.text += letter;
             yield return new WaitForSeconds(wordSpeed);
         }
+
+        activeTypingCoroutine = null;
     }
 
     public void NextLine()
     {
-        continueButton.SetActive(false);
+        if (activeNPC != this) return;
+
+        if (continueButton != null) continueButton.SetActive(false);
 
         if (index < dialogue.Length - 1)
         {
             index++;
-            dialogueText.text = "";
-            StartCoroutine(Typing());
+            StartTyping();
         }
         else
         {
-            zeroText();
+            CloseDialogue();
         }
     }
+
+    void CloseDialogue()
+    {
+        ForceClose();
+        activeNPC = null;
+    }
+
+    // Called when another NPC takes over
+    public void ForceClose()
+    {
+        if (activeTypingCoroutine != null)
+        {
+            StopCoroutine(activeTypingCoroutine);
+            activeTypingCoroutine = null;
+        }
+        if (dialogueText != null) dialogueText.text = "";
+        if (continueButton != null) continueButton.SetActive(false);
+        if (dialoguePanel != null) dialoguePanel.SetActive(false);
+        index = 0;
+    }
+
+    public void ResetDialogue()
+    {
+        CloseDialogue();
+        playerIsClose = false;
+    }
+
+    public void zeroText() => CloseDialogue();
 
     private void OnTriggerEnter2D(Collider2D other)
     {
@@ -101,7 +163,8 @@ public class NPCCode : MonoBehaviour
         if (other.CompareTag("Player"))
         {
             playerIsClose = false;
-            zeroText();
+            if (activeNPC == this)
+                CloseDialogue();
         }
     }
 }
