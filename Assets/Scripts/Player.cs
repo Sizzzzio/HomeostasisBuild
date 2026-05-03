@@ -204,6 +204,7 @@ public class Player : MonoBehaviour
 
         Debug.Log($"Player took {amount} damage. HP: {health}/{maxHealth}");
 
+        AudioManager.Instance?.Play(AudioManager.Instance.playerHit);
         StartCoroutine(InvincibilityFrames());
 
         if (health <= 0)
@@ -220,6 +221,7 @@ public class Player : MonoBehaviour
         transform.position = lastGroundedPosition;
         rb.linearVelocity = Vector2.zero;
 
+        AudioManager.Instance?.Play(AudioManager.Instance.playerHit);
         StartCoroutine(InvincibilityFrames());
 
         if (health <= 0)

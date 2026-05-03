@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 public class EnemyHealth : MonoBehaviour, IDamageable
@@ -25,6 +25,7 @@ public class EnemyHealth : MonoBehaviour, IDamageable
         currentHealth -= damage;
         Debug.Log($"{gameObject.name} took {damage} damage. HP: {currentHealth}/{maxHealth}");
 
+        AudioManager.Instance?.Play(AudioManager.Instance.enemyHit);  // ← add this
         if (sr != null)
             StartCoroutine(HitFlash());
 
